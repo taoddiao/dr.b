@@ -1,0 +1,13 @@
+Hippocampal_tail 555.667256
+subiculum 417.717945
+CA1 634.695518
+hippocampal-fissure 200.755279
+presubiculum 313.348335
+parasubiculum 63.589103
+molecular_layer_HP 557.611182
+GC-ML-DG 277.913358
+CA3 194.421181
+CA4 232.315902
+fimbria 111.343670
+HATA 60.764623
+Whole_hippocampus 3419.388072
