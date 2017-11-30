@@ -3,6 +3,7 @@ import SimpleITK as sitk
 import numpy as np
 import csv
 from glob import glob
+import os
 import pandas as pd
 try:
     from tqdm import tqdm # long waits are not fun
@@ -29,7 +30,7 @@ z = z position of slice in world coordinates mm
     v_diam = int(diam/spacing[0]+5)
     v_xmin = np.max([0,int(v_center[0]-v_diam)-5])
     v_xmax = np.min([width-1,int(v_center[0]+v_diam)+5])
-    v_ymin = np.max([0,int(v_center[1]-v_diam)-5]) 
+    v_ymin = np.max([0,int(v_center[1]-v_diam)-5])
     v_ymax = np.min([height-1,int(v_center[1]+v_diam)+5])
 
     v_xrange = range(v_xmin,v_xmax+1)
@@ -49,7 +50,7 @@ z = z position of slice in world coordinates mm
     return(mask)
 
 def matrix2int16(matrix):
-    ''' 
+    '''
 matrix must be a numpy array NXN
 Returns uint16 version
     '''
@@ -61,15 +62,15 @@ Returns uint16 version
 ############
 #
 # Getting list of image files
-luna_path = "/home/jonathan/LUNA2016/"
-luna_subset_path = luna_path+"subset1/"
-output_path = "/home/jonathan/tutorial/"
+luna_path = "/home/qwerty/data/luna16/"
+luna_subset_path = luna_path+"subset0/"
+output_path = "/home/qwerty/data/luna16/output/"
 file_list=glob(luna_subset_path+"*.mhd")
 
 
 #####################
 #
-# Helper function to get rows in data frame associated 
+# Helper function to get rows in data frame associated
 # with each file
 def get_filename(file_list, case):
     for f in file_list:
@@ -87,15 +88,15 @@ df_node = df_node.dropna()
 #
 for fcount, img_file in enumerate(tqdm(file_list)):
     mini_df = df_node[df_node["file"]==img_file] #get all nodules associate with file
-    if mini_df.shape[0]>0: # some files may not have a nodule--skipping those 
+    if mini_df.shape[0]>0: # some files may not have a nodule--skipping those
         # load the data once
-        itk_img = sitk.ReadImage(img_file) 
+        itk_img = sitk.ReadImage(img_file)
         img_array = sitk.GetArrayFromImage(itk_img) # indexes are z,y,x (notice the ordering)
         num_z, height, width = img_array.shape        #heightXwidth constitute the transverse plane
         origin = np.array(itk_img.GetOrigin())      # x,y,z  Origin in world coordinates (mm)
         spacing = np.array(itk_img.GetSpacing())    # spacing of voxels in world coor. (mm)
         # go through all nodes (why just the biggest?)
-        for node_idx, cur_row in mini_df.iterrows():       
+        for node_idx, cur_row in mini_df.iterrows():
             node_x = cur_row["coordX"]
             node_y = cur_row["coordY"]
             node_z = cur_row["coordZ"]

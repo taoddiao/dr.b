@@ -62,7 +62,7 @@ if __name__ == "__main__":
     ad_df = load_data(ad_path)
     pd_df = load_data(pd_path)
     nor_df = load_data(nor_path)
-    linear_clf = svm.SVC(kernel='linear', probability=True)
+    linear_clf = svm.SVC(kernel='linear')
     poly_clf = svm.SVC(kernel='poly')
     rbf_clf = svm.SVC(kernel='rbf')
     c_list = [1e-3, 1e-2, 1e-1, 1, 10, 100]
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         x.append(nor_df.loc[p].values)
         y.append(-1)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=0)
-    model = svm_cross_validation(x_train, y_train, linear_clf, c_list)
+    model = svm_cross_validation(x_train, y_train, linear_clf, c_list[4:5])
     y_predict = model.predict(x_test)
     acc = 1 - np.count_nonzero((y_test - y_predict)) / float(len(y_predict))
     print(y_predict, y_test, acc)
