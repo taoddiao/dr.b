@@ -6,16 +6,17 @@ from keras.optimizers import Adam
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, TensorBoard
 import pandas as pd
 import numpy as np
+import pickle
 from tqdm import tqdm
 
 
-path = "/home/qwerty/data/NIH/"
-
-
-chex_net = CheXNet(reduction=0.5)
+path = '/home/qwerty/data/NIH/'
+log_dir = '/tmp/tensor_board_logs3'
+weights_dir = 'weights_dir/'
+chex_net = CheXNet(reduction=0.5, dropout_rate=0.5)
 
 # optimizer
-adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+adam = Adam(lr=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
 # loss function
 def weighted_binary_crossentropy(y_true, y_pred):
@@ -23,19 +24,52 @@ def weighted_binary_crossentropy(y_true, y_pred):
     y_pred = tf.clip_by_value(y_pred, epsilon, 1 - epsilon)
     y_pred = tf.log(y_pred / (1 - y_pred))
 
-    weights = 81.86770140428678 # neg / pos
+    weights = 81.69844179651696 # neg / pos 81.69844179651696
     return K.mean(tf.nn.weighted_cross_entropy_with_logits(logits=y_pred, targets=y_true, pos_weight=weights), axis=-1)
 
+# metrics
 
-chex_net.compile(optimizer=adam, loss=weighted_binary_crossentropy, metrics=['accuracy'])
+def precision(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+    precision = true_positives / (predicted_positives + K.epsilon())
+    return precision
+
+def recall(y_true, y_pred):
+    true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+    possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+    recall = true_positives / (possible_positives + K.epsilon())
+    return recall
+
+def f1(y_true, y_pred):
+    def recall(y_true, y_pred):
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        possible_positives = K.sum(K.round(K.clip(y_true, 0, 1)))
+        recall = true_positives / (possible_positives + K.epsilon())
+        return recall
+
+    def precision(y_true, y_pred):
+        true_positives = K.sum(K.round(K.clip(y_true * y_pred, 0, 1)))
+        predicted_positives = K.sum(K.round(K.clip(y_pred, 0, 1)))
+        precision = true_positives / (predicted_positives + K.epsilon())
+        return precision
+    precision = precision(y_true, y_pred)
+    recall = recall(y_true, y_pred)
+    return 2*((precision*recall)/(precision+recall))
+
+metrics = ['accuracy', recall, precision, f1]
+
+chex_net.compile(optimizer=adam, loss=weighted_binary_crossentropy, metrics=metrics)
 
 # callbacks
-model_checkpoint = ModelCheckpoint('chexnet_weights.hdf5', monitor='loss', save_best_only=True)
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=1)
-tensor_board = TensorBoard(log_dir='/tmp/tensor_board_logs')
+model_checkpoint_valloss = ModelCheckpoint(weights_dir + 'chexnet_weights_valloss.hdf5', monitor='val_loss')
+model_checkpoint_acc = ModelCheckpoint(weights_dir + 'chexnet_weights_acc.hdf5', monitor='accuracy')
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=0.0001)
+tensor_board = TensorBoard(log_dir=log_dir)
 
-callbacks = [model_checkpoint, reduce_lr, tensor_board]
+callbacks = [model_checkpoint_valloss, model_checkpoint_acc, reduce_lr, tensor_board]
 
+# generator for train and validation data
 class Data_generator(object):
     def __init__(self, shape=(224,224), batch_size=16):
         self.dim_x = shape[0]
@@ -64,15 +98,6 @@ class Data_generator(object):
 
 batch_size = 16
 epochs = 200
-# X_train1 = np.load(path+"train_5000_images.npy", mmap_mode = 'r')
-# y_train1 = np.load(path+"train_5000_labels.npy", mmap_mode = 'r')
-# X_valid = np.load(path+"valid_images.npy", mmap_mode = 'r')
-# y_valid = np.load(path+"valid_labels.npy", mmap_mode = 'r')
-# X_test = np.load(path+"test_images.npy", mmap_mode = 'r')
-# y_test = np.load(path+"test_labels.npy", mmap_mode = 'r')
-
-# chex_net.fit(X_train1, y_train1, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(X_valid, y_valid), shuffle=True, callbacks=callbacks)
-# chex_net.fit(X_train1, y_train1, batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.1, shuffle=True, callbacks=callbacks)
 
 labels = {}
 partition = {}
@@ -83,8 +108,8 @@ f = open(path + 'partition.pickle', 'rb')
 partition = pickle.load(f)
 f.close()
 
-training_generator = DataGenerator(shape=(224,224), batch_size=batch_size).generate(labels, partition['train'])
-validation_generator = DataGenerator(shape=(224,224), batch_size=batch_size).generate(labels, partition['validation'])
+training_generator = Data_generator(shape=(224,224), batch_size=batch_size).generate(labels, partition['train'])
+validation_generator = Data_generator(shape=(224,224), batch_size=batch_size).generate(labels, partition['valid'])
 
 chex_net.fit_generator( generator=training_generator,
                         steps_per_epoch=len(partition['train'])//batch_size,
@@ -92,4 +117,4 @@ chex_net.fit_generator( generator=training_generator,
                         verbose=1,
                         callbacks=callbacks,
                         validation_data=validation_generator,
-                        validation_steps=len(partition['validation'])//batch_size )
+                        validation_steps=len(partition['valid'])//batch_size )
