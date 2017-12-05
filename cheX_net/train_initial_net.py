@@ -16,7 +16,7 @@ weights_dir = 'weights_dir/'
 chex_net = CheXNet(reduction=0.5, dropout_rate=0.5)
 
 # optimizer
-adam = Adam(lr=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+adam = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
 # loss function
 def weighted_binary_crossentropy(y_true, y_pred):
@@ -64,7 +64,7 @@ chex_net.compile(optimizer=adam, loss=weighted_binary_crossentropy, metrics=metr
 # callbacks
 model_checkpoint_valloss = ModelCheckpoint(weights_dir + 'chexnet_weights_valloss.hdf5', monitor='val_loss')
 model_checkpoint_acc = ModelCheckpoint(weights_dir + 'chexnet_weights_acc.hdf5', monitor='accuracy')
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, min_lr=0.0001)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.0001)
 tensor_board = TensorBoard(log_dir=log_dir)
 
 callbacks = [model_checkpoint_valloss, model_checkpoint_acc, reduce_lr, tensor_board]

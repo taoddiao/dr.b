@@ -2,3 +2,7 @@ test.py
 .idea/
 __pycache__/
 *.py[cod]
+*.bak
+*.hdf5
+*.h5
+weights_dir/
