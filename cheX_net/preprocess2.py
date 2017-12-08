@@ -33,6 +33,9 @@ def make_data(df, pids):
             img[:,:,1] = (img[:,:,1] - 116.78) * 0.017
             img[:,:,2] = (img[:,:,2] - 123.68) * 0.017
 
+            # mean=[0.485, 0.456, 0.406],
+            # std=[0.229, 0.224, 0.225]
+
             npy_name = row['Image Index'].replace('png', 'npy')
             np.save(path + 'processed_npy2/' + npy_name, img)
             npy_names.append(npy_name)

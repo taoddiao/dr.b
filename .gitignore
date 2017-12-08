@@ -6,3 +6,4 @@ __pycache__/
 *.hdf5
 *.h5
 weights_dir/
+test_results/
