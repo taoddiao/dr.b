@@ -9,7 +9,7 @@ import keras.backend as K
 
 from custom_layers import Scale
 
-def CheXNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, dropout_rate=0.0, weight_decay=1e-4):
+def CheXNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, dropout_rate=0.0, weight_decay=1e-4, classes=1):
     '''Instantiate the DenseNet 121 architecture,
         # Arguments
             nb_dense_block: number of dense blocks to add to end
@@ -32,10 +32,10 @@ def CheXNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, dropo
     global concat_axis
     if K.image_dim_ordering() == 'tf':
       concat_axis = 3
-      img_input = Input(shape=(224, 224, 1), name='data')
+      img_input = Input(shape=(224, 224, 3), name='data')
     else:
       concat_axis = 1
-      img_input = Input(shape=(1, 224, 224), name='data')
+      img_input = Input(shape=(3, 224, 224), name='data')
 
     # From architecture for ImageNet (Table 1 in the paper)
     nb_filter = 64
@@ -67,7 +67,7 @@ def CheXNet(nb_dense_block=4, growth_rate=32, nb_filter=64, reduction=0.0, dropo
     x = Activation('relu', name='relu'+str(final_stage)+'_blk')(x)
     x = GlobalAveragePooling2D(name='pool'+str(final_stage))(x)
 
-    x = Dense(1, name='fc6')(x)
+    x = Dense(classes, name='fc6')(x)
     x = Activation('sigmoid', name='prob')(x)
 
     model = Model(img_input, x, name='CheX_net')
