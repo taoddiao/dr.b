@@ -6,4 +6,6 @@ __pycache__/
 *.hdf5
 *.h5
 weights_dir/
+weights_tmpdir/
+tensorboard/
 test_results/
