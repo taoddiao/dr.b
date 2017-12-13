@@ -10,10 +10,10 @@ from tqdm import tqdm
 
 
 path = '/home/qwerty/data/NIH/'
-log_dir = '/tmp/tensor_board_logs2/'
-weights_dir = 'weights_dir/'
-weights_path = 'chexnet_init_weights_tf.h5'
-chex_net = CheXNet(reduction=0.5)
+log_dir = 'tensorboard/class_14/'
+weights_dir = 'weights_tmpdir/'
+weights_path = 'weights_dir/chexnet_init_weights_class_14_tf.h5'
+chex_net = CheXNet(reduction=0.5, classes=14)
 chex_net.load_weights(weights_path)
 # optimizer
 adam = Adam(lr=0.01, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
@@ -26,7 +26,7 @@ def unweighted_binary_crossentropy(y_true, y_pred):
 chex_net.compile(optimizer=adam, loss=unweighted_binary_crossentropy)
 
 # callbacks
-model_checkpoint_valloss = ModelCheckpoint(weights_dir + 'chexnet(14)_weights_epoch_{epoch:03d}_val_loss_{val_loss:.4f}.hdf5', monitor='val_loss')
+model_checkpoint_valloss = ModelCheckpoint(weights_dir + 'chexnet_14_weights_epoch_{epoch:03d}_val_loss_{val_loss:.4f}.hdf5', monitor='val_loss', save_weights_only=True)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=5, min_lr=0.0001)
 tensor_board = TensorBoard(log_dir=log_dir)
 
@@ -54,7 +54,7 @@ class Data_generator(object):
 
         for i, npy in enumerate(npys_temp):
             X[i,:,:,:] = np.load(path + 'processed_npy2/' + npy)
-            y[i] = labels[npy]
+            y[i,:] = labels[npy]
 
         return X, y
 
